@@ -4,9 +4,9 @@ import { SketchButton } from './SketchButton';
 import toast from 'react-hot-toast';
 
 const STEPS = [
-  { id: 'follow', label: 'Follow @RabbishETH', taskUrl: 'https://x.com/RabbishETH', placeholder: 'X Username' },
-  { id: 'likert', label: 'Like + RT Pinned', taskUrl: 'https://x.com/post/1', placeholder: 'Paste RT Link' },
-  { id: 'comment', label: 'Comment EVM + Tag 2', taskUrl: 'https://x.com/post/1/comments', placeholder: 'Paste Comment Link' },
+  { id: 'x_username', label: 'Follow @RabbishETH', taskUrl: 'https://x.com/RabbishETH', placeholder: 'X Username' },
+  { id: 'rt_link', label: 'Like + RT Pinned', taskUrl: 'https://x.com/post/1', placeholder: 'Paste RT Link' },
+  { id: 'comment_link', label: 'Comment EVM + Tag 2', taskUrl: 'https://x.com/post/1/comments', placeholder: 'Paste Comment Link' },
   { id: 'wallet', label: 'Submit EVM Wallet', taskUrl: null, placeholder: '0x...' }
 ];
 
@@ -18,7 +18,6 @@ export const WhitelistFlow = () => {
   const [refLink, setRefLink] = useState('');
   const [userData, setUserData] = useState({ x_username: '', wallet: '', rt_link: '', comment_link: '' });
 
-  // 1. Capture Ref from URL on load
   const [referrer, setReferrer] = useState<string | null>(null);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -26,10 +25,14 @@ export const WhitelistFlow = () => {
     if (ref) setReferrer(ref);
   }, []);
 
-  // 2. Auto-prefix @ for Username step
+  // Sync val with stored data when moving between steps
   useEffect(() => {
-    if (currentStep === 0 && unlocked && !val.startsWith('@')) {
-      setVal('@' + val);
+    const stepId = STEPS[currentStep].id as keyof typeof userData;
+    setVal(userData[stepId] || '');
+    
+    // Auto-prefix @ for username if we just unlocked it
+    if (currentStep === 0 && unlocked && !userData.x_username) {
+      setVal('@');
     }
   }, [currentStep, unlocked]);
 
@@ -57,16 +60,15 @@ export const WhitelistFlow = () => {
       return;
     }
 
-    // Save data locally as we progress
-    const updatedData = { ...userData };
-    if (currentStep === 0) updatedData.x_username = val;
-    if (currentStep === 3) updatedData.wallet = val;
+    // 1. SAVE the current value into the correct field
+    const stepId = STEPS[currentStep].id;
+    const updatedData = { ...userData, [stepId]: val };
     setUserData(updatedData);
 
     if (currentStep < STEPS.length - 1) {
       setStep(currentStep + 1);
-      setVal('');
-      setUnlocked(currentStep + 1 === 3);
+      // We don't setVal('') here anymore; the useEffect handles it
+      setUnlocked(currentStep + 1 === 3); 
     } else {
       // FINAL SUBMISSION
       setVerifying(true);
@@ -74,19 +76,22 @@ export const WhitelistFlow = () => {
         const response = await fetch('/.netlify/functions/submit', {
           method: 'POST',
           body: JSON.stringify({
-            wallet: val, // current val is wallet
-            x_username: userData.x_username,
+            wallet: updatedData.wallet,
+            x_username: updatedData.x_username,
+            rt_link: updatedData.rt_link,
+            comment_link: updatedData.comment_link,
             referred_by: referrer
           }),
         });
         const data = await response.json();
         
         if (data.success) {
-          // Generate dynamic ref link: current domain + /?ref=username
           const baseUrl = window.location.origin;
-          const cleanUsername = userData.x_username.replace('@', '');
+          const cleanUsername = updatedData.x_username.replace('@', '');
           setRefLink(`${baseUrl}/?ref=${cleanUsername}`);
           toast.success('DUMPED INTO THE LANDFILL!');
+        } else {
+          throw new Error(data.error);
         }
       } catch (err) {
         toast.error("Database is full of actual trash. Try again.");
@@ -96,12 +101,19 @@ export const WhitelistFlow = () => {
     }
   };
 
+  const back = () => {
+    if (currentStep > 0) {
+      setStep(currentStep - 1);
+      setUnlocked(true); // Since they already did the task
+    }
+  };
+
   if (refLink) {
     return (
       <div className="p-10 bg-[#C5BAB3] paper-tear burning-edge text-center shadow-2xl rotate-1">
-        <h2 className="text-4xl font-black mb-4">YOU ARE ALMOST TRASH</h2>
-        <p className="mb-4">Invite more Rabbishes to the pile to increase your chance:</p>
-        <div className="bg-black text-yellow-400 p-4 break-all mb-6 text-sm">
+        <h2 className="text-4xl font-black mb-4">YOU ARE TRASH NOW</h2>
+        <p className="mb-4">Invite more Rabbishes to the pile:</p>
+        <div className="bg-black text-yellow-400 p-4 break-all mb-6 font-mono text-sm">
           {refLink}
         </div>
         <SketchButton className="w-full" onClick={() => {navigator.clipboard.writeText(refLink); toast.success("COPIED")}}>
@@ -132,13 +144,13 @@ export const WhitelistFlow = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {!unlocked && STEPS[currentStep].taskUrl && (
+                    {!unlocked && STEPS[currentStep].taskUrl && !val && (
                         <SketchButton className="w-full py-8 text-2xl" onClick={() => handleTaskClick(STEPS[currentStep].taskUrl!)}>
                             OPEN X.COM
                         </SketchButton>
                     )}
 
-                    {(unlocked || currentStep === 3) && (
+                    {(unlocked || currentStep === 3 || val) && (
                       <input 
                         autoFocus
                         placeholder={STEPS[currentStep].placeholder}
@@ -155,7 +167,7 @@ export const WhitelistFlow = () => {
 
           <div className="flex items-center justify-between pt-10">
             {currentStep > 0 && (
-              <button onClick={() => { setStep(currentStep - 1); setUnlocked(true); }} className="underline text-red-600 font-bold">BACK</button>
+              <button onClick={back} className="underline text-red-600 font-bold">BACK</button>
             )}
             <SketchButton 
               onClick={next} 
