@@ -111,7 +111,7 @@ export const WhitelistFlow = () => {
   if (refLink) {
     return (
       <div className="p-10 bg-[#C5BAB3] paper-tear burning-edge text-center shadow-2xl rotate-1">
-        <h2 className="text-4xl font-black mb-4">YOU ARE ALMOST TRASH</h2>
+        <h2 className="text-4xl font-black mb-4">YOU ARE ALMOST <span className="bg-[#40262F] text-white px-2 italic">RABBISHED</span></h2>
         <p className="mb-4">Increase your chances, invite more Rabbishes to the pile:</p>
         <div className="bg-black text-yellow-400 p-4 break-all mb-6 text-sm">
           {refLink}
