@@ -5,8 +5,8 @@ import toast from 'react-hot-toast';
 
 const STEPS = [
   { id: 'x_username', label: 'Follow @RabbishETH', taskUrl: 'https://x.com/RabbishETH', placeholder: 'X Username' },
-  { id: 'rt_link', label: 'Like, RT & Qoute', taskUrl: 'https://x.com/RabbishETH/status/2039374981994307768', placeholder: 'Paste Quote Link' },
-  { id: 'comment_link', label: 'Comment EVM + Tag 2', taskUrl: 'https://x.com/RabbishETH/status/2039374981994307768', placeholder: 'Paste Comment Link' },
+  { id: 'rt_link', label: 'Like, RT & Qoute', taskUrl: 'https://x.com/RabbishETH/status/2039705850583916687', placeholder: 'Paste Quote Link' },
+  { id: 'comment_link', label: 'Comment EVM + Tag 2', taskUrl: 'https://x.com/RabbishETH/status/2039705850583916687', placeholder: 'Paste Comment Link' },
   { id: 'wallet', label: 'Submit EVM Wallet', taskUrl: null, placeholder: '0x...' }
 ];
 
